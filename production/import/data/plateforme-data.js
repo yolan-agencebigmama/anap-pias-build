@@ -223,7 +223,7 @@ const FICHES = {
             }
         ],
 
-        timeline : [ // TODO
+        timeline : [
             {
                 titre: "Histoire de la solution",
                 details: [

@@ -87,6 +87,10 @@ function removeAllChildNodes(parent) {
     parent.removeChild(parent.firstChild);
   }
 }
+function isChildOf(el, elParent) {
+  while ((el = el.parentNode) && el !== elParent) ;
+  return !!el;
+}
 function eventAtTransitionEnd(elem, func, options = { property: false, once: true, debug: false }) {
   if (!options.property) {
     elem.addEventListener("transitionend", () => {
@@ -259,6 +263,7 @@ let PIAS = {
     // prevScrollPos : integer
     // prevScrollHeight : integer
     // currentFicheSmallOpen : element
+    // forceBackExit : false
   },
   elements: {
     main: document.querySelector(".plateforme-main-container"),
@@ -278,7 +283,10 @@ let PIAS = {
     topBarSecondaryTitle: document.querySelector(".plateforme-top .top-secondary wrapper[data-pias-id='title-secondary']"),
     topBarSecondaryTitleText: document.querySelector(".plateforme-top .top-secondary wrapper[data-pias-id='title-secondary'] .titre-secondaire"),
     topBarSecondarySearchBar: document.querySelector(".plateforme-top .top-secondary wrapper[data-pias-id='search-bar']"),
-    topBarSearchBtn: document.querySelector(".plateforme-top button[data-pias-id='search-toggle']")
+    topBarSearchBtn: document.querySelector(".plateforme-top button[data-pias-id='search-toggle']"),
+    proposerProjetContainer: document.querySelector(".plateforme-proposer-projet"),
+    proposerProjetSidebarWrapper: document.querySelector(".plateforme-proposer-projet .widget-container"),
+    proposerProjetSideToggle: document.querySelectorAll("*[data-pias-id='proposer-projet-toggle']")
   },
   APP: {
     isTouch: "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0,
@@ -322,8 +330,124 @@ let PIAS = {
       PIAS.elements.topBarSearchBtn.addEventListener("click", PIAS.APP.topBar.searchOpenToggle);
       PIAS.elements.topBarSearchBtn.addEventListener("click", PIAS.APP.results.search.close);
       PIAS.APP.fiches.init();
+      PIAS.APP.url.init();
       if (PIAS.honeycomb.blobs.active == true) {
         PIAS.APP.honeycomb.blob.init();
+      }
+      if (PIAS.elements.proposerProjetSideToggle.length > 0) {
+        PIAS.elements.proposerProjetSideToggle.forEach((el) => {
+          el.addEventListener("click", PIAS.APP.proposerProjetSideBar.toggle);
+        });
+      }
+      PIAS.elements.fichesContainer.scrollTo({ top: 0, behavior: "instant" });
+    },
+    url: {
+      getKeysFromURL: () => {
+        const keys = {};
+        location.search.slice(1).split("&").forEach((item) => {
+          let [key, value] = item.split("=");
+          keys[key] = value;
+        });
+        return keys;
+      },
+      slugifyString: (inputString) => {
+        return inputString.toLowerCase().replace(/\s+/g, "-").replaceAll("&", "_").replaceAll("=", "_").replaceAll("'", "_").replaceAll("é", "e").replaceAll("è", "e").replaceAll("ë", "e").replaceAll("ê", "e").replaceAll("à", "a").replaceAll("ù", "u").replaceAll("ç", "c").replace(/[^\w-]+/g, "");
+      },
+      // false => clear ; true => keep ; string => replace
+      push: (keyTag = false, keyFiche = false) => {
+        const keysFromURL = PIAS.APP.url.getKeysFromURL();
+        history.replaceState({}, "", window.location.pathname);
+        if (keyTag === false && keyFiche === false) {
+          return;
+        }
+        let newURL = "?";
+        if (keyTag !== false) {
+          if (keyTag === true) {
+            if (keysFromURL.t) {
+              newURL += "t=" + keysFromURL.t;
+            }
+          } else {
+            newURL += "t=" + PIAS.APP.url.slugifyString(keyTag);
+          }
+        }
+        if (keyFiche !== false) {
+          if (newURL.match("=")) {
+            newURL += "&";
+          }
+          if (keyFiche === true) {
+            if (keysFromURL.f) {
+              newURL += "f=" + keysFromURL.f;
+            }
+          } else {
+            newURL += "f=" + PIAS.APP.url.slugifyString(keyFiche);
+          }
+        }
+        if (newURL.length > 2) {
+          history.replaceState({}, "", newURL);
+        }
+      },
+      openOnLoad: () => {
+        const keysFromURL = PIAS.APP.url.getKeysFromURL();
+        history.replaceState({}, "", window.location.pathname);
+        let isValidT = false, isValidF = false;
+        if (keysFromURL.t) {
+          for (let i = 0; i < PIAS_DATA.HC_ITEMS.length; i++) {
+            let itemLinks = PIAS_DATA.HC_ITEMS[i].menu.links;
+            for (let l = 0; l < itemLinks.length; l++) {
+              if (PIAS.APP.url.slugifyString(itemLinks[l]) == keysFromURL.t) {
+                isValidT = true;
+                PIAS.APP.results.create("tag", itemLinks[l]);
+                break;
+              }
+            }
+            if (isValidT) {
+              break;
+            }
+          }
+          if (!isValidT) {
+            console.error("[PIAS.url] Key '?t' not valid : " + keysFromURL.t);
+          }
+        }
+        if (keysFromURL.f) {
+          const fichesKeys = Object.keys(PIAS_DATA.FICHES);
+          for (let i = 0; i < fichesKeys.length; i++) {
+            if (PIAS.APP.url.slugifyString(fichesKeys[i]) == keysFromURL.f) {
+              isValidF = true;
+              PIAS.APP.results.show(true, false);
+              PIAS.APP.fiches.createSmall(Object.entries(PIAS_DATA.FICHES)[i], true);
+              if (!isValidT) {
+                PIAS.fiches.forceBackExit = true;
+              }
+              break;
+            }
+          }
+          if (!isValidF) {
+            console.error("[PIAS.url] Key '?f' not valid : " + keysFromURL.f);
+          }
+        }
+      },
+      init: () => {
+        PIAS.APP.url.openOnLoad();
+      }
+    },
+    proposerProjetSideBar: {
+      toggle: () => {
+        PIAS.elements.proposerProjetContainer.classList.toggle("active");
+        clearTextSelection();
+        setTimeout(() => {
+          if (PIAS.elements.proposerProjetContainer.classList.contains("active")) {
+            window.addEventListener("click", PIAS.APP.proposerProjetSideBar.closeIfClickOutside);
+          }
+        }, 50);
+      },
+      closeIfClickOutside: (event) => {
+        if (event) {
+          const check = isChildOf(event.target, PIAS.elements.proposerProjetSidebarWrapper);
+          if (!check) {
+            PIAS.elements.proposerProjetContainer.classList.remove("active");
+            window.removeEventListener("click", PIAS.APP.proposerProjetSideBar.closeIfClickOutside);
+          }
+        }
       }
     },
     intro: {
@@ -602,6 +726,9 @@ let PIAS = {
         docHTML.setAttribute("data-pias-search-opened", "false");
         docHTML.setAttribute("data-pias-fiches-results", "false");
         docHTML.setAttribute("data-pias-fiche-opened", "false");
+        if (!PIAS.fiches.forceBackExit) {
+          PIAS.fiches.forceBackExit = false;
+        }
       },
       getFichesObjectsFromTagName: (tagName) => {
         let passFichesObjects = {};
@@ -628,7 +755,7 @@ let PIAS = {
         let foundFichesKeys = ["identifier", "id3"];
         return foundFichesKeys;
       },
-      createSmall: (ficheObject) => {
+      createSmall: (ficheObject, forceOpenDirectly = false) => {
         let ficheData = ficheObject[1];
         let newFicheSmall = document.createElement("div");
         newFicheSmall.classList.add("plateforme-fiche-small");
@@ -676,6 +803,9 @@ let PIAS = {
           PIAS.APP.fiches.open(ficheObject, newFicheSmall);
         });
         newFicheSmall.querySelector(".arrow-container").addEventListener("click", PIAS.APP.fiches.back);
+        if (forceOpenDirectly) {
+          PIAS.APP.fiches.open(ficheObject, newFicheSmall);
+        }
       },
       open: (ficheObject, ficheElement) => {
         if (ficheElement.classList.contains("active")) {
@@ -873,22 +1003,22 @@ let PIAS = {
                                         </svg></div>
                                         <span>Télécharger la fiche</span>
                                     </button>
-                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
+                                    <a href="#" target="_blank" title="Partager sur LinkedIn" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                             <path d="M11.72,29.43h-4.8v-15.25h4.8v15.25ZM9.32,12.07c-.54,0-1.08-.17-1.53-.47-.45-.3-.8-.74-1.01-1.24-.21-.5-.26-1.06-.15-1.59.11-.53.37-1.02.76-1.41.39-.38.88-.64,1.41-.75s1.09-.05,1.59.16c.5.21.93.56,1.23,1.02.3.45.46.99.46,1.53,0,.36-.06.73-.2,1.06-.14.34-.34.64-.6.9-.26.26-.57.46-.91.6-.34.14-.7.2-1.07.19ZM29.42,29.45h-4.8v-8.33c0-2.46-1.04-3.22-2.39-3.22-1.42,0-2.82,1.07-2.82,3.28v8.27h-4.8v-15.25h4.62v2.11h.06c.46-.94,2.09-2.54,4.56-2.54,2.68,0,5.57,1.59,5.57,6.25v9.43Z" />
                                         </svg></div>
                                     </a>
-                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
+                                    <a href="#" target="_blank" title="Partager sur Instagram" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                               <path d="M18.52,6.51c3.75,0,4.19.02,5.66.08,1.37.06,2.11.29,2.6.48.65.25,1.12.56,1.61,1.05.49.49.79.96,1.05,1.61.19.49.42,1.24.48,2.6.07,1.48.08,1.92.08,5.66s-.02,4.19-.08,5.66c-.06,1.37-.29,2.11-.48,2.6-.25.65-.56,1.12-1.05,1.61-.49.49-.96.79-1.61,1.05-.49.19-1.24.42-2.6.48-1.48.07-1.92.08-5.66.08s-4.19-.02-5.66-.08c-1.37-.06-2.11-.29-2.6-.48-.65-.25-1.12-.56-1.61-1.05-.49-.49-.79-.96-1.05-1.61-.19-.49-.42-1.24-.48-2.6-.07-1.48-.08-1.92-.08-5.66s.02-4.19.08-5.66c.06-1.37.29-2.11.48-2.6.25-.65.56-1.12,1.05-1.61.49-.49.96-.79,1.61-1.05.49-.19,1.24-.42,2.6-.48,1.47-.07,1.92-.08,5.66-.08ZM18.52,3.98c-3.81,0-4.28.02-5.78.08-1.49.07-2.51.31-3.4.65-.93.36-1.71.84-2.49,1.62-.78.78-1.26,1.56-1.62,2.48-.34.89-.59,1.91-.65,3.4-.07,1.5-.08,1.98-.08,5.78s.02,4.28.08,5.78c.07,1.49.31,2.51.65,3.4.36.93.84,1.71,1.62,2.49.78.78,1.56,1.26,2.48,1.62.89.34,1.91.59,3.4.65,1.49.07,1.97.08,5.78.08s4.28-.02,5.78-.08c1.49-.07,2.51-.31,3.4-.65.92-.36,1.7-.84,2.48-1.62.78-.78,1.26-1.56,1.62-2.48.34-.89.59-1.91.65-3.4.07-1.5.08-1.97.08-5.78s-.02-4.28-.08-5.78c-.07-1.49-.31-2.51-.65-3.4-.35-.93-.82-1.71-1.6-2.49-.78-.78-1.56-1.26-2.48-1.62-.89-.34-1.91-.59-3.4-.65-1.5-.07-1.98-.09-5.78-.09ZM18.52,10.8c-3.98,0-7.2,3.23-7.2,7.2s3.23,7.2,7.2,7.2,7.2-3.23,7.2-7.2-3.23-7.2-7.2-7.2ZM18.52,22.67c-2.58,0-4.67-2.09-4.67-4.67s2.09-4.67,4.67-4.67,4.67,2.09,4.67,4.67-2.09,4.67-4.67,4.67ZM27.69,10.52c0,.93-.76,1.68-1.68,1.68s-1.68-.76-1.68-1.68.76-1.68,1.68-1.68,1.68.76,1.68,1.68Z" />
                                         </svg></div>
                                     </a>
-                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
+                                    <a href="#" target="_blank" title="Partager sur X (Twitter)" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                             <path d="M24.86,7.21h3.66l-8,9.14,9.41,12.44h-7.37l-5.77-7.54-6.6,7.54h-3.66l8.55-9.78L6.07,7.21h7.55l5.21,6.89,6.03-6.89ZM23.58,26.6h2.03L12.52,9.29h-2.18l13.24,17.31Z" />
                                         </svg></div>
                                     </a>
-                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
+                                    <a href="#" target="_blank" title="Partager sur Facebook" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                             <path d="M25.01,21.2l1.03-5.59h-5.97v-1.98c0-2.95,1.16-4.09,4.16-4.09.93,0,1.68.02,2.11.07v-5.06c-.82-.23-2.82-.45-3.97-.45-6.11,0-8.92,2.88-8.92,9.11v2.41h-3.77v5.59h3.77v12.16c1.41.35,2.89.54,4.42.54.75,0,1.49-.05,2.21-.13v-12.56h4.95Z" />
                                         </svg></div>
@@ -934,6 +1064,7 @@ let PIAS = {
           950,
           0.5
         );
+        PIAS.APP.url.push(true, ficheObject[0]);
         setTimeout(() => {
           ficheElement.classList.add("active");
           setTimeout(() => {
@@ -979,8 +1110,11 @@ let PIAS = {
         }, 50);
       },
       back: (event, forceExit = false) => {
+        forceExit = PIAS.fiches.forceBackExit ? true : forceExit;
+        PIAS.fiches.forceBackExit = false;
         if (docHTML.getAttribute("data-pias-fiche-opened") != "false") {
           docHTML.setAttribute("data-pias-fiche-opened", "false");
+          PIAS.APP.url.push(true, false);
           PIAS.elements.fichesContainerScrollerInside.querySelectorAll(".plateforme-fiche-small").forEach((ficheEl) => {
             ficheEl.classList.remove("active");
             ficheEl.classList.remove("hide");
@@ -1086,12 +1220,16 @@ let PIAS = {
         }, timings[0]);
         if (tagName) {
           PIAS.APP.topBar.secondaryOpen("title", tagName);
+          PIAS.APP.url.push(tagName);
+        } else {
+          PIAS.APP.url.push(true, false);
         }
       },
       hide: () => {
         docHTML.setAttribute("data-pias-search-opened", "false");
         docHTML.setAttribute("data-pias-fiche-opened", "false");
         docHTML.setAttribute("data-pias-fiches-results", "removing");
+        PIAS.APP.url.push(false, false);
         PIAS.elements.topBarSearchBtn.classList.remove("active");
         PIAS.APP.topBar.secondaryOpen(false);
         setTimeout(() => {
@@ -1101,10 +1239,12 @@ let PIAS = {
       },
       search: {
         setup: () => {
+          PIAS.fiches.forceBackExit = false;
           if (docHTML.getAttribute("data-pias-fiche-opened") !== "false") {
             PIAS.APP.fiches.back();
           }
           PIAS.APP.honeycomb.itemActions.close();
+          PIAS.APP.url.push(false, false);
           setTimeout(() => {
             docHTML.setAttribute("data-pias-search-opened", "true");
           }, 15);

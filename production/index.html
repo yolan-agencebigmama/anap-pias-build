@@ -11,8 +11,8 @@
 
 	<link rel="stylesheet" crossorigin href="./import/styles/styles-system.scss">
 
-  <script type="module" crossorigin src="./scripts-BxPNksMt.js"></script>
-  <link rel="stylesheet" crossorigin href="./styles-BXj7BY04.css">
+  <script type="module" crossorigin src="./scripts.js"></script>
+  <link rel="stylesheet" crossorigin href="./styles.css">
 </head>
 
 <body>
@@ -32,7 +32,7 @@
 						</a>
 					</div>
 					<div class="quick-btns">
-						<button class="anap-btn style-pastille toggle style-secondaire pias-show-device--mobile">
+						<button data-pias-id="proposer-projet-toggle" class="anap-btn style-pastille toggle style-secondaire pias-show-device--mobile">
 							<div class="icon-container">
 								<svg viewBox="0 0 24 24" fill="none">
 									<path d="M9.87,16.37c-1.82,0-3.35-.63-4.61-1.89-1.26-1.26-1.89-2.8-1.89-4.61s.63-3.35,1.89-4.61c1.26-1.26,2.8-1.89,4.61-1.89s3.35.63,4.61,1.89c1.26,1.26,1.89,2.8,1.89,4.61,0,.73-.12,1.43-.35,2.08-.23.65-.55,1.23-.95,1.73l5.6,5.6c.18.18.27.42.27.7s-.09.52-.27.7-.42.27-.7.27-.52-.09-.7-.27l-5.6-5.6c-.5.4-1.07.72-1.72.95-.65.23-1.34.35-2.07.35ZM9.87,14.37c1.25,0,2.31-.44,3.19-1.31s1.31-1.94,1.31-3.19-.44-2.31-1.31-3.19-1.94-1.31-3.19-1.31-2.31.44-3.19,1.31-1.31,1.94-1.31,3.19.44,2.31,1.31,3.19,1.94,1.31,3.19,1.31Z"/>
@@ -139,14 +139,29 @@
 		</div>
 
 		<div class="plateforme-proposer-projet">
-			<wrapper>
-				<div class="shape-angle"></div>
+			<div class="widget-background"></div>
+			<wrapper class="widget-container">
+				<wrapper>
+					<wrapper class="side-button">
+						<wrapper data-pias-id="proposer-projet-toggle">
+							<div class="shape-angle"></div>
 
-				<wrapper class="container">
-					<span class="title-side">Proposer un projet</span>
+							<wrapper class="title-container">
+								<span class="title-side">Proposer un projet</span>
+							</wrapper>
+
+							<div class="shape-angle"></div>
+						</wrapper>
+					</wrapper>
+
+					<wrapper class="content">
+						<span>Pour proposer votre projet,<br>merci de compléter notre formulaire en<br>cliquant sur le bouton ci-dessous.</span>
+
+						<a href="https://ia.anap.fr/proposer-votre-projet/" class="anap-btn style-secondaire style-force-theme-light">
+							<span>Compléter le formulaire</span>
+						</a>
+					</wrapper>
 				</wrapper>
-
-				<div class="shape-angle"></div>
 			</wrapper>
 		</div>
 

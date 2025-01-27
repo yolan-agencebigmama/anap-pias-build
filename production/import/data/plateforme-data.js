@@ -158,7 +158,7 @@ const FICHES = {
         titre : "Sécuriser la prescription médicamenteuse avec Posos",
         tags : [ // facultatif
             "Analyse pharmaceutique",
-            "Qualité de soins"
+            "Qualité des soins"
         ],
         logo : "assets/fiches/logo-fiche.png", // facultatif
         location : "Centre Hospitalier de Bourg en Bresse", // facultatif

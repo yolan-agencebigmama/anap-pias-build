@@ -77,6 +77,11 @@ function clearTextSelection() {
 function lerp(start, end, amt) {
   return (1 - amt) * start + amt * end;
 }
+function removeAllNodes(elements) {
+  elements.forEach((el) => {
+    el.remove();
+  });
+}
 function removeAllChildNodes(parent) {
   while (parent.firstChild) {
     parent.removeChild(parent.firstChild);
@@ -133,6 +138,11 @@ function animateScrollToFollowElement(elementTarget, elementScrollerRef, element
   loopAnim();
 }
 let ANAP = {
+  elements: {
+    themeSwitcher: document.querySelector(".anap-theme-switcher"),
+    searchInputsLinked: document.querySelectorAll("input[data-anap-id='search-input'][data-anap-search-link-id]"),
+    searchButtonsLinked: document.querySelectorAll("button[data-anap-id='search-button'][data-anap-search-link-id]")
+  },
   theme: {
     names: ["light", "dark"],
     current: 1,
@@ -159,8 +169,46 @@ let ANAP = {
       docHTML.setAttribute("data-anap-theme", ANAP.theme.names[ANAP.theme.current]);
     }
   },
-  elements: {
-    themeSwitcher: document.querySelector(".anap-theme-switcher")
+  search: {
+    linked: {
+      init: () => {
+        if (ANAP.elements.searchInputsLinked.length != 0 && ANAP.elements.searchButtonsLinked.length != 0) {
+          if (ANAP.elements.searchInputsLinked.length > 0 && ANAP.elements.searchButtonsLinked.length > 0) {
+            ANAP.elements.searchInputsLinked.forEach((searchInput) => {
+              const searchID_Input = searchInput.getAttribute("data-anap-search-link-id");
+              let areCorresponding = false;
+              ANAP.elements.searchButtonsLinked.forEach((searchButton) => {
+                const searchID_Button = searchButton.getAttribute("data-anap-search-link-id");
+                if (searchID_Input.localeCompare(searchID_Button) == 0) {
+                  areCorresponding = true;
+                  searchButton.addEventListener("click", () => {
+                    ANAP.search.linked.triggerSearch(
+                      searchInput.value,
+                      PIAS.APP.results.search.generate,
+                      PIAS.APP.results.search.setup
+                    );
+                  });
+                }
+              });
+              if (!areCorresponding) {
+                console.error("[ANAP.search] Couldn't find corresponding linked search button for : " + searchID_Input);
+              }
+            });
+          } else {
+            console.warn("[ANAP.search] Missing linked elements", ANAP.elements.searchInputsLinked, ANAP.elements.searchButtonsLinked);
+          }
+        }
+      },
+      triggerSearch: (inputSearch, callbackGenerate, callbackSetup) => {
+        if (callbackSetup) {
+          callbackSetup();
+        }
+        const fichesKeys = PIAS.APP.fiches.getFichesKeysFromSearchInput(inputSearch);
+        if (callbackGenerate) {
+          callbackGenerate(fichesKeys);
+        }
+      }
+    }
   }
 };
 let PIAS = {
@@ -209,6 +257,7 @@ let PIAS = {
   },
   fiches: {
     // prevScrollPos : integer
+    // prevScrollHeight : integer
     // currentFicheSmallOpen : element
   },
   elements: {
@@ -253,6 +302,7 @@ let PIAS = {
       PIAS.honeycomb.tileAspectRatio = PIAS.honeycomb.tileRealSize.h / PIAS.honeycomb.tileRealSize.w;
       PIAS.honeycomb.tileSize = {};
       ANAP.theme.init();
+      ANAP.search.linked.init();
       if (PIAS.elements.introVideoElement) {
         PIAS.elements.introVideoElement.src = PIAS.introVideoByThemes[ANAP.theme.current];
         PIAS.APP.intro.setSize();
@@ -270,8 +320,9 @@ let PIAS = {
       PIAS.elements.menuBackground.addEventListener("click", PIAS.APP.honeycomb.itemActions.close);
       PIAS.elements.fichesBtnRetour.addEventListener("click", PIAS.APP.fiches.back);
       PIAS.elements.topBarSearchBtn.addEventListener("click", PIAS.APP.topBar.searchOpenToggle);
+      PIAS.elements.topBarSearchBtn.addEventListener("click", PIAS.APP.results.search.close);
       PIAS.APP.fiches.init();
-      {
+      if (PIAS.honeycomb.blobs.active == true) {
         PIAS.APP.honeycomb.blob.init();
       }
     },
@@ -292,14 +343,19 @@ let PIAS = {
         }, PIAS.introDuration);
       },
       callbackFinish: () => {
-        {
-          if (PIAS.isTouch) ;
-          else {
-            {
+        if (PIAS.honeycomb.blobFollow.active == true) {
+          if (PIAS.isTouch) {
+            if (PIAS.honeycomb.blobFollow.touch) {
+              PIAS.APP.honeycomb.blobFollow.init();
+            }
+          } else {
+            if (!PIAS.honeycomb.blobFollow.activeLayoutRelative) {
               PIAS.elements.honeycombBlobFollowContainer.setAttribute("data-pias-stop", "layout-relative");
               if (PIAS.rect.w > PIAS.viewportWidthBreakpoints.tablet) {
                 PIAS.APP.honeycomb.blobFollow.init();
               }
+            } else {
+              PIAS.APP.honeycomb.blobFollow.init();
             }
           }
         }
@@ -440,7 +496,7 @@ let PIAS = {
           itemMenuContainerElement.querySelector(".close-btn .bg").addEventListener("click", PIAS.APP.honeycomb.itemActions.close);
           itemMenuContainerElement.querySelectorAll(".sidebar .links > *").forEach((linkEl) => {
             linkEl.addEventListener("click", () => {
-              PIAS.APP.results.create(linkEl.querySelector(".texte").innerText);
+              PIAS.APP.results.create("tag", linkEl.querySelector(".texte").innerText);
             });
           });
           PIAS.honeycomb.itemCount += 1;
@@ -500,7 +556,7 @@ let PIAS = {
               }, PIAS.honeycomb.blobs.duration);
             }, Math.max(200, PIAS.honeycomb.blobs.duration - randomIntFromInterval(-1e4, PIAS.honeycomb.blobs.duration)));
           }
-          if (PIAS.elements.honeycombBlobsContainer) {
+          if (PIAS.honeycomb.blobs.active && PIAS.elements.honeycombBlobsContainer) {
             for (let b = 1; b <= PIAS.honeycomb.blobs.nb; b++) {
               docHTML.style.setProperty("--pias-blob-duration", PIAS.honeycomb.blobs.duration + "ms");
               let blobElement = document.createElement("div");
@@ -543,19 +599,37 @@ let PIAS = {
     },
     fiches: {
       init: () => {
+        docHTML.setAttribute("data-pias-search-opened", "false");
         docHTML.setAttribute("data-pias-fiches-results", "false");
         docHTML.setAttribute("data-pias-fiche-opened", "false");
       },
-      getFichesDataFromTagName: (tagName) => {
-        let passFichesData = {};
+      getFichesObjectsFromTagName: (tagName) => {
+        let passFichesObjects = {};
         Object.entries(PIAS_DATA.FICHES).forEach((ficheData) => {
           if (ficheData[1].tags.includes(tagName)) {
-            passFichesData[ficheData[0]] = ficheData[1];
+            passFichesObjects[ficheData[0]] = ficheData[1];
           }
         });
-        return passFichesData;
+        return passFichesObjects;
       },
-      createSmall: (ficheData) => {
+      getFichesObjectsFromKeys: (fichesKeys) => {
+        let passFichesObjects = {};
+        fichesKeys.forEach((key) => {
+          if (PIAS_DATA.FICHES[key]) {
+            passFichesObjects[key] = PIAS_DATA.FICHES[key];
+          } else {
+            console.error("[PIAS] Fiche introuvable : " + key);
+          }
+        });
+        return passFichesObjects;
+      },
+      // algorithme de recherche des fiches
+      getFichesKeysFromSearchInput: (inputSearch) => {
+        let foundFichesKeys = ["identifier", "id3"];
+        return foundFichesKeys;
+      },
+      createSmall: (ficheObject) => {
+        let ficheData = ficheObject[1];
         let newFicheSmall = document.createElement("div");
         newFicheSmall.classList.add("plateforme-fiche-small");
         const exists = {
@@ -599,14 +673,15 @@ let PIAS = {
                 `;
         PIAS.elements.fichesContainerScrollerInside.appendChild(newFicheSmall);
         newFicheSmall.querySelector("clicker").addEventListener("click", () => {
-          PIAS.APP.fiches.open(ficheData, newFicheSmall);
+          PIAS.APP.fiches.open(ficheObject, newFicheSmall);
         });
         newFicheSmall.querySelector(".arrow-container").addEventListener("click", PIAS.APP.fiches.back);
       },
-      open: (ficheData, ficheElement) => {
+      open: (ficheObject, ficheElement) => {
         if (ficheElement.classList.contains("active")) {
           return;
         }
+        let ficheData = ficheObject[1];
         PIAS.fiches.currentFicheSmallOpen = ficheElement;
         docHTML.setAttribute("data-pias-fiche-opened", "building");
         PIAS.elements.fichesContainerScrollerInside.querySelectorAll(".plateforme-fiche-small").forEach((otherFicheSmall) => {
@@ -643,7 +718,7 @@ let PIAS = {
             `<path style="fill: #f6951e;" data-name="9"  d="M121.19,40.84l-19.56,7.22c1.48,4.01,2.36,8.31,2.53,12.79l20.83-.81c-.26-6.73-1.58-13.18-3.8-19.2Z" />`,
             `<path style="fill: #f9a31c;" data-name="10" d="M125,64.68l-20.83-.72c-.14,4.01-.84,7.87-2.03,11.5l19.81,6.48c1.79-5.47,2.84-11.26,3.05-17.25Z" />`
           ];
-          for (let level = 0; level < parseInt(ficheData.infosProjet.maturation); level++) {
+          for (let level = 0; level < Math.min(parseInt(ficheData.infosProjet.maturation), 10); level++) {
             htmlMaturationGraduations += maturationGraduationsArray[level];
           }
         }
@@ -792,28 +867,28 @@ let PIAS = {
 
                                 <wrapper class="actions">
 
-                                    <button class="anap-btn large">
+                                    <button class="anap-btn size-xl">
                                         <div class="icon-container"><svg viewBox="0 0 24 24" fill="none">
                                             <path d="M12,15.57c-.13,0-.26-.02-.38-.06-.12-.04-.23-.11-.32-.21l-3.6-3.6c-.2-.2-.3-.43-.29-.7,0-.27.1-.5.29-.7.2-.2.44-.3.71-.31.27,0,.51.09.71.29l1.88,1.88v-7.15c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29s.52.1.71.29c.19.19.29.43.29.71v7.15l1.88-1.88c.2-.2.44-.3.71-.29.28,0,.51.11.71.31.18.2.28.43.29.7,0,.27-.09.5-.29.7l-3.6,3.6c-.1.1-.21.17-.32.21-.12.04-.24.06-.38.06ZM6,20c-.55,0-1.02-.2-1.41-.59-.39-.39-.59-.86-.59-1.41v-2c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29s.52.1.71.29c.19.19.29.43.29.71v2h12v-2c0-.28.1-.52.29-.71.19-.19.43-.29.71-.29s.52.1.71.29c.19.19.29.43.29.71v2c0,.55-.2,1.02-.59,1.41-.39.39-.86.59-1.41.59H6Z" />
                                         </svg></div>
                                         <span>Télécharger la fiche</span>
                                     </button>
-                                    <a href="#" target="_blank" title="social" class="anap-btn large pastille style-noir">
+                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                             <path d="M11.72,29.43h-4.8v-15.25h4.8v15.25ZM9.32,12.07c-.54,0-1.08-.17-1.53-.47-.45-.3-.8-.74-1.01-1.24-.21-.5-.26-1.06-.15-1.59.11-.53.37-1.02.76-1.41.39-.38.88-.64,1.41-.75s1.09-.05,1.59.16c.5.21.93.56,1.23,1.02.3.45.46.99.46,1.53,0,.36-.06.73-.2,1.06-.14.34-.34.64-.6.9-.26.26-.57.46-.91.6-.34.14-.7.2-1.07.19ZM29.42,29.45h-4.8v-8.33c0-2.46-1.04-3.22-2.39-3.22-1.42,0-2.82,1.07-2.82,3.28v8.27h-4.8v-15.25h4.62v2.11h.06c.46-.94,2.09-2.54,4.56-2.54,2.68,0,5.57,1.59,5.57,6.25v9.43Z" />
                                         </svg></div>
                                     </a>
-                                    <a href="#" target="_blank" title="social" class="anap-btn large pastille style-noir">
+                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                               <path d="M18.52,6.51c3.75,0,4.19.02,5.66.08,1.37.06,2.11.29,2.6.48.65.25,1.12.56,1.61,1.05.49.49.79.96,1.05,1.61.19.49.42,1.24.48,2.6.07,1.48.08,1.92.08,5.66s-.02,4.19-.08,5.66c-.06,1.37-.29,2.11-.48,2.6-.25.65-.56,1.12-1.05,1.61-.49.49-.96.79-1.61,1.05-.49.19-1.24.42-2.6.48-1.48.07-1.92.08-5.66.08s-4.19-.02-5.66-.08c-1.37-.06-2.11-.29-2.6-.48-.65-.25-1.12-.56-1.61-1.05-.49-.49-.79-.96-1.05-1.61-.19-.49-.42-1.24-.48-2.6-.07-1.48-.08-1.92-.08-5.66s.02-4.19.08-5.66c.06-1.37.29-2.11.48-2.6.25-.65.56-1.12,1.05-1.61.49-.49.96-.79,1.61-1.05.49-.19,1.24-.42,2.6-.48,1.47-.07,1.92-.08,5.66-.08ZM18.52,3.98c-3.81,0-4.28.02-5.78.08-1.49.07-2.51.31-3.4.65-.93.36-1.71.84-2.49,1.62-.78.78-1.26,1.56-1.62,2.48-.34.89-.59,1.91-.65,3.4-.07,1.5-.08,1.98-.08,5.78s.02,4.28.08,5.78c.07,1.49.31,2.51.65,3.4.36.93.84,1.71,1.62,2.49.78.78,1.56,1.26,2.48,1.62.89.34,1.91.59,3.4.65,1.49.07,1.97.08,5.78.08s4.28-.02,5.78-.08c1.49-.07,2.51-.31,3.4-.65.92-.36,1.7-.84,2.48-1.62.78-.78,1.26-1.56,1.62-2.48.34-.89.59-1.91.65-3.4.07-1.5.08-1.97.08-5.78s-.02-4.28-.08-5.78c-.07-1.49-.31-2.51-.65-3.4-.35-.93-.82-1.71-1.6-2.49-.78-.78-1.56-1.26-2.48-1.62-.89-.34-1.91-.59-3.4-.65-1.5-.07-1.98-.09-5.78-.09ZM18.52,10.8c-3.98,0-7.2,3.23-7.2,7.2s3.23,7.2,7.2,7.2,7.2-3.23,7.2-7.2-3.23-7.2-7.2-7.2ZM18.52,22.67c-2.58,0-4.67-2.09-4.67-4.67s2.09-4.67,4.67-4.67,4.67,2.09,4.67,4.67-2.09,4.67-4.67,4.67ZM27.69,10.52c0,.93-.76,1.68-1.68,1.68s-1.68-.76-1.68-1.68.76-1.68,1.68-1.68,1.68.76,1.68,1.68Z" />
                                         </svg></div>
                                     </a>
-                                    <a href="#" target="_blank" title="social" class="anap-btn large pastille style-noir">
+                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                             <path d="M24.86,7.21h3.66l-8,9.14,9.41,12.44h-7.37l-5.77-7.54-6.6,7.54h-3.66l8.55-9.78L6.07,7.21h7.55l5.21,6.89,6.03-6.89ZM23.58,26.6h2.03L12.52,9.29h-2.18l13.24,17.31Z" />
                                         </svg></div>
                                     </a>
-                                    <a href="#" target="_blank" title="social" class="anap-btn large pastille style-noir">
+                                    <a href="#" target="_blank" title="social" class="anap-btn size-xl style-pastille style-noir">
                                         <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
                                             <path d="M25.01,21.2l1.03-5.59h-5.97v-1.98c0-2.95,1.16-4.09,4.16-4.09.93,0,1.68.02,2.11.07v-5.06c-.82-.23-2.82-.45-3.97-.45-6.11,0-8.92,2.88-8.92,9.11v2.41h-3.77v5.59h3.77v12.16c1.41.35,2.89.54,4.42.54.75,0,1.49-.05,2.21-.13v-12.56h4.95Z" />
                                         </svg></div>
@@ -850,13 +925,14 @@ let PIAS = {
           }
         }
         PIAS.fiches.prevScrollPos = PIAS.elements.fichesContainerWrapper.getBoundingClientRect().top * -1;
+        PIAS.fiches.prevScrollHeight = PIAS.elements.fichesContainerScrollerInside.getBoundingClientRect().height;
         PIAS.elements.fichesContainerScrollerInside.insertBefore(newFicheContent, ficheElement.nextSibling);
         animateScrollToFollowElement(
           ficheElement,
           PIAS.elements.fichesContainerWrapper,
           PIAS.elements.fichesContainer,
           950,
-          0.35
+          0.5
         );
         setTimeout(() => {
           ficheElement.classList.add("active");
@@ -902,39 +978,52 @@ let PIAS = {
           }, 50);
         }, 50);
       },
-      back: () => {
-        if (docHTML.hasAttribute("data-pias-fiche-opened")) {
-          if (docHTML.getAttribute("data-pias-fiche-opened") != "false") {
-            docHTML.setAttribute("data-pias-fiche-opened", "false");
-            PIAS.elements.fichesContainerScrollerInside.querySelectorAll(".plateforme-fiche-small").forEach((ficheEl) => {
-              ficheEl.classList.remove("active");
-              ficheEl.classList.remove("hide");
-              eventAtTransitionEnd(ficheEl, () => {
-                ficheEl.style.height = null;
-              }, { once: true });
-            });
-            PIAS.elements.fichesContainerScrollerInside.querySelectorAll(".plateforme-fiche-content").forEach((ficheContentEl) => {
-              PIAS.APP.fiches.removeFicheContent(ficheContentEl);
-            });
+      back: (event, forceExit = false) => {
+        if (docHTML.getAttribute("data-pias-fiche-opened") != "false") {
+          docHTML.setAttribute("data-pias-fiche-opened", "false");
+          PIAS.elements.fichesContainerScrollerInside.querySelectorAll(".plateforme-fiche-small").forEach((ficheEl) => {
+            ficheEl.classList.remove("active");
+            ficheEl.classList.remove("hide");
+            eventAtTransitionEnd(ficheEl, () => {
+              ficheEl.style.height = null;
+            }, { once: true });
+          });
+          PIAS.elements.fichesContainerScrollerInside.querySelectorAll(".plateforme-fiche-content").forEach((ficheContentEl) => {
+            PIAS.APP.fiches.removeFicheContent(ficheContentEl);
+          });
+          if (PIAS.fiches.prevScrollHeight < PIAS.rect.h * 0.75) {
+            PIAS.elements.fichesContainer.scrollTo({ top: 0, behavior: "smooth" });
+          } else {
             const currentScrollPos = PIAS.elements.fichesContainerWrapper.getBoundingClientRect().top * -1;
             if (!(currentScrollPos > PIAS.fiches.prevScrollPos - 400 && currentScrollPos < PIAS.fiches.prevScrollPos + 400)) {
               setTimeout(() => {
-                PIAS.elements.fichesContainer.scrollTo({ top: PIAS.fiches.prevScrollPos, behavior: "smooth" });
-                if (PIAS.fiches.currentFicheSmallOpen) {
-                  setTimeout(() => {
-                    animateScrollToFollowElement(
-                      PIAS.fiches.currentFicheSmallOpen,
-                      PIAS.elements.fichesContainerWrapper,
-                      PIAS.elements.fichesContainer,
-                      600,
-                      1
-                    );
-                  }, currentScrollPos > 600 ? 200 : 50);
+                if (docHTML.getAttribute("data-pias-fiches-results") == "true") {
+                  PIAS.elements.fichesContainer.scrollTo({ top: PIAS.fiches.prevScrollPos, behavior: "smooth" });
+                  if (PIAS.fiches.currentFicheSmallOpen) {
+                    setTimeout(() => {
+                      animateScrollToFollowElement(
+                        PIAS.fiches.currentFicheSmallOpen,
+                        PIAS.elements.fichesContainerWrapper,
+                        PIAS.elements.fichesContainer,
+                        800,
+                        1
+                      );
+                    }, currentScrollPos > 600 ? 200 : 50);
+                  }
                 }
               }, 200);
             }
-            PIAS.elements.topBarSearchBtn.classList.remove("active");
-            PIAS.APP.topBar.secondaryOpen(false);
+          }
+          setTimeout(() => {
+            if (docHTML.getAttribute("data-pias-search-opened") != "false") {
+              PIAS.elements.topBarSearchBtn.classList.add("active");
+              PIAS.APP.topBar.secondaryOpen("search");
+            } else {
+              PIAS.elements.topBarSearchBtn.classList.remove("active");
+              PIAS.APP.topBar.secondaryOpen(false);
+            }
+          }, 30);
+          if (!forceExit) {
             return;
           }
         }
@@ -942,33 +1031,65 @@ let PIAS = {
       }
     },
     results: {
-      create: (tagName) => {
+      create: (type, value, instant = false, postponeCreation = false, callbackPostGenerate) => {
         docHTML.setAttribute("data-pias-fiches-results", "building");
-        const fichesDataSelected = PIAS.APP.fiches.getFichesDataFromTagName(tagName);
-        if (Object.values(fichesDataSelected).length > 0) {
-          Object.values(fichesDataSelected).forEach((ficheData) => {
-            PIAS.APP.fiches.createSmall(ficheData);
-          });
+        let fichesObjectsSelected = {};
+        if (type === "tag") {
+          fichesObjectsSelected = PIAS.APP.fiches.getFichesObjectsFromTagName(value);
+        } else if (type === "id") {
+          fichesObjectsSelected = PIAS.APP.fiches.getFichesObjectsFromKeys(value);
         } else {
-          let newNothingEl = document.createElement("div");
-          newNothingEl.classList.add("plateforme-fiche-nothing-found");
-          newNothingEl.innerHTML = `<wrapper><span>Aucun résultat trouvé.</span></wrapper>`;
-          PIAS.elements.fichesContainerScrollerInside.appendChild(newNothingEl);
+          console.error("[PIAS.results.create] 'type' is invalid : " + type);
+          return;
         }
-        PIAS.APP.results.show(tagName);
+        function generate(fichesObjectsSelected2) {
+          if (Object.entries(fichesObjectsSelected2).length > 0) {
+            Object.entries(fichesObjectsSelected2).forEach((ficheObject) => {
+              PIAS.APP.fiches.createSmall(ficheObject);
+            });
+          } else {
+            let newNothingEl = document.createElement("div");
+            newNothingEl.classList.add("plateforme-fiche-nothing-found");
+            newNothingEl.innerHTML = `<wrapper><span>Aucun résultat trouvé.</span></wrapper>`;
+            PIAS.elements.fichesContainerScrollerInside.appendChild(newNothingEl);
+          }
+        }
+        if (postponeCreation) {
+          postponeCreation = () => {
+            generate(fichesObjectsSelected);
+          };
+        } else {
+          generate(fichesObjectsSelected);
+        }
+        PIAS.APP.results.show(
+          instant,
+          type == "tag" ? value : false,
+          postponeCreation,
+          callbackPostGenerate
+        );
       },
-      show: (tagName) => {
-        PIAS.elements.fichesContainer.scrollTo({ top: 0, behavior: "instant" });
+      show: (instant = false, tagName, callbackPostponeCreation, callbackPostGenerate) => {
+        let timings = instant ? [400, 0] : [300, 400];
         docHTML.setAttribute("data-pias-fiches-results", "true-generated");
         setTimeout(() => {
+          if (callbackPostGenerate) {
+            callbackPostGenerate();
+          }
+          if (callbackPostponeCreation) {
+            callbackPostponeCreation();
+          }
+          PIAS.elements.fichesContainer.scrollTo({ top: 0, behavior: "instant" });
           docHTML.setAttribute("data-pias-fiches-results", "true-transition");
           setTimeout(() => {
             docHTML.setAttribute("data-pias-fiches-results", "true");
-          }, 400);
-        }, 300);
-        PIAS.APP.topBar.secondaryOpen("title", tagName);
+          }, timings[1]);
+        }, timings[0]);
+        if (tagName) {
+          PIAS.APP.topBar.secondaryOpen("title", tagName);
+        }
       },
       hide: () => {
+        docHTML.setAttribute("data-pias-search-opened", "false");
         docHTML.setAttribute("data-pias-fiche-opened", "false");
         docHTML.setAttribute("data-pias-fiches-results", "removing");
         PIAS.elements.topBarSearchBtn.classList.remove("active");
@@ -976,7 +1097,35 @@ let PIAS = {
         setTimeout(() => {
           docHTML.setAttribute("data-pias-fiches-results", "false");
           removeAllChildNodes(PIAS.elements.fichesContainerScrollerInside);
-        }, 1e3);
+        }, 600);
+      },
+      search: {
+        setup: () => {
+          if (docHTML.getAttribute("data-pias-fiche-opened") !== "false") {
+            PIAS.APP.fiches.back();
+          }
+          PIAS.APP.honeycomb.itemActions.close();
+          setTimeout(() => {
+            docHTML.setAttribute("data-pias-search-opened", "true");
+          }, 15);
+        },
+        generate: (fichesKeys) => {
+          const currentResults = Array.prototype.slice.call(PIAS.elements.fichesContainerScrollerInside.children);
+          PIAS.APP.results.create(
+            "id",
+            fichesKeys,
+            true,
+            true,
+            () => {
+              removeAllNodes(currentResults);
+            }
+          );
+        },
+        close: () => {
+          if (docHTML.getAttribute("data-pias-search-opened") !== "false") {
+            PIAS.APP.fiches.back(void 0, true);
+          }
+        }
       }
     },
     topBar: {
@@ -995,11 +1144,13 @@ let PIAS = {
           }, 50);
         }
         Array.from(PIAS.elements.topBarSecondaryWrapper.children).forEach((sEl) => {
-          animateHeight(sEl, () => {
-            sEl.classList.remove("active");
-          });
+          if (sEl.classList.contains("active")) {
+            animateHeight(sEl, () => {
+              sEl.classList.remove("active");
+            });
+          }
         });
-        if (type == "title" || !type && docHTML.getAttribute("data-pias-fiches-results") != "false" && docHTML.getAttribute("data-pias-fiches-results") != "removing") {
+        if (type == "title" || !type && docHTML.getAttribute("data-pias-fiches-results") != "false" && docHTML.getAttribute("data-pias-fiches-results") != "removing" && docHTML.getAttribute("data-pias-search-opened") == "false") {
           PIAS.elements.topBarSearchBtn.classList.remove("active");
           if (value) {
             PIAS.elements.topBarSecondaryTitleText.innerText = value;

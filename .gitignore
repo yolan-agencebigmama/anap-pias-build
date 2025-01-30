@@ -30,6 +30,7 @@ Desktop.ini
 Thumbs.db
 ehthumbs.db
 .DS_Store
+.DS_Store*
 Icon?
 .tmp.*
 .temp

@@ -143,7 +143,7 @@ function animateScrollToFollowElement(elementTarget, elementScrollerRef, element
 }
 let ANAP = {
   elements: {
-    themeSwitcher: document.querySelector(".anap-theme-switcher"),
+    themeSwitcher: document.querySelectorAll(".anap-theme-switcher"),
     searchInputsLinked: document.querySelectorAll("input[data-anap-id='search-input'][data-anap-search-link-id]"),
     searchButtonsLinked: document.querySelectorAll("button[data-anap-id='search-button'][data-anap-search-link-id]")
   },
@@ -160,8 +160,10 @@ let ANAP = {
         ANAP.theme.switch(0);
       }
       if (ANAP.elements.themeSwitcher) {
-        ANAP.elements.themeSwitcher.addEventListener("click", (ev) => {
-          ANAP.theme.switch();
+        ANAP.elements.themeSwitcher.forEach((el) => {
+          el.addEventListener("click", (ev) => {
+            ANAP.theme.switch();
+          });
         });
       }
     },
@@ -291,7 +293,8 @@ let PIAS = {
   APP: {
     isTouch: "ontouchstart" in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0,
     isBrowser: {
-      firefox: navigator.userAgent.toLowerCase().indexOf("firefox") >= 0
+      firefox: navigator.userAgent.toLowerCase().indexOf("firefox") >= 0,
+      safari: navigator.vendor && navigator.vendor.indexOf("Apple") > -1 && navigator.userAgent && navigator.userAgent.indexOf("CriOS") == -1 && navigator.userAgent.indexOf("FxiOS") == -1
     },
     rectUpdate: () => {
       const elMainRect = PIAS.elements.main.getBoundingClientRect();
@@ -303,8 +306,13 @@ let PIAS = {
       };
     },
     init: () => {
-      if (PIAS.APP.isBrowser.firefox) {
-        docHTML.setAttribute("data-pias-is-browser", "firefox");
+      Object.entries(PIAS.APP.isBrowser).forEach((br) => {
+        if (!!br[1]) {
+          docHTML.setAttribute("data-pias-is-browser", br[0].toString());
+        }
+      });
+      if (PIAS.APP.isTouch) {
+        docHTML.classList.add("deviceIsTouch");
       }
       PIAS.rect = PIAS.APP.rectUpdate();
       PIAS.honeycomb.tileAspectRatio = PIAS.honeycomb.tileRealSize.h / PIAS.honeycomb.tileRealSize.w;
@@ -436,6 +444,9 @@ let PIAS = {
         clearTextSelection();
         setTimeout(() => {
           if (PIAS.elements.proposerProjetContainer.classList.contains("active")) {
+            PIAS.elements.proposerProjetSideToggle.forEach((el) => {
+              el.classList.add("active");
+            });
             window.addEventListener("click", PIAS.APP.proposerProjetSideBar.closeIfClickOutside);
           }
         }, 50);
@@ -445,6 +456,9 @@ let PIAS = {
           const check = isChildOf(event.target, PIAS.elements.proposerProjetSidebarWrapper);
           if (!check) {
             PIAS.elements.proposerProjetContainer.classList.remove("active");
+            PIAS.elements.proposerProjetSideToggle.forEach((el) => {
+              el.classList.remove("active");
+            });
             window.removeEventListener("click", PIAS.APP.proposerProjetSideBar.closeIfClickOutside);
           }
         }
@@ -501,6 +515,11 @@ let PIAS = {
         PIAS.honeycomb.tileSize.h = (PIAS.honeycomb.tileSize.w * PIAS.honeycomb.tileAspectRatio).toFixed(6);
         docHTML.style.setProperty("--honeycomb-tile-width", PIAS.honeycomb.tileSize.w + "px");
         docHTML.style.setProperty("--honeycomb-tile-height", PIAS.honeycomb.tileSize.h + "px");
+      },
+      itemMenusScrollReset: () => {
+        PIAS.elements.itemMenusContainer.childNodes.forEach((el) => {
+          el.scrollTo({ top: 0, behavior: "smooth" });
+        });
       },
       placeItem: () => {
         PIAS_DATA.HC_ITEMS.forEach((itemData) => {
@@ -593,7 +612,7 @@ let PIAS = {
           itemMenuContainerElement.innerHTML = `
                         <wrapper>
                             <div class="color-bg fca" style="${itemData.couleurCSS_menuBg ? "--menu-bg-color: " + itemData.couleurCSS_menuBg : ""}">
-                                <div class="close-btn"><div class="bg fca0"></div><wrapper class="icon"><svg viewBox="0 0 24 24"><line x2="24" y2="24" /><line y1="24" x2="24" /></wrapper></div>
+                                <div class="close-btn"><div class="mobile-bg-target"></div><div class="bg fca0"></div><wrapper class="icon"><svg viewBox="0 0 24 24"><line x2="24" y2="24" /><line y1="24" x2="24" /></wrapper></div>
                                 <div class="color fca0"></div>
                             </div>
                             <div class="sidebar">
@@ -617,7 +636,9 @@ let PIAS = {
           itemHexElement.addEventListener("click", PIAS.APP.honeycomb.itemActions.open);
           itemHexElement.addEventListener("mouseenter", PIAS.APP.honeycomb.blobFollow.hoveringYes);
           itemHexElement.addEventListener("mouseleave", PIAS.APP.honeycomb.blobFollow.hoveringNo);
-          itemMenuContainerElement.querySelector(".close-btn .bg").addEventListener("click", PIAS.APP.honeycomb.itemActions.close);
+          itemMenuContainerElement.querySelectorAll(".close-btn > *").forEach((el) => {
+            el.addEventListener("click", PIAS.APP.honeycomb.itemActions.close);
+          });
           itemMenuContainerElement.querySelectorAll(".sidebar .links > *").forEach((linkEl) => {
             linkEl.addEventListener("click", () => {
               PIAS.APP.results.create("tag", linkEl.querySelector(".texte").innerText);
@@ -646,6 +667,7 @@ let PIAS = {
           const itemData = PIAS_DATA.HC_ITEMS[itemID];
           const itemOrientation = event.target.getAttribute("data-pias-item-orientation");
           PIAS.APP.honeycomb.itemActions.close();
+          PIAS.APP.honeycomb.itemMenusScrollReset();
           event.target.classList.add("active");
           PIAS.elements.main.querySelectorAll("*[data-pias-id--menu='" + itemID + "']").forEach((item) => {
             item.classList.add("active");
@@ -911,9 +933,9 @@ let PIAS = {
 
                         <div class="fiche-block" data-pias-fiche-block="infos">
                             ${exists.maturation ? `
-                            <wrapper data-pias-fiche-block="maturation">
+                            <wrapper data-pias-fiche-block="maturation" title="Maturation de ${ficheData.infosProjet.maturation} sur 10">
                                 <div class="maturation-graduations">
-                                    <svg viewBox="0 0 125 81.93" tabindex="0" aria-label="${ficheData.infosProjet.maturation} sur 10">
+                                    <svg viewBox="0 0 125 81.93" tabindex="0" aria-label="Maturation de ${ficheData.infosProjet.maturation} sur 10">
                                         <g data-name="bg">
                                             <path data-name="10" d="M125,64.68l-20.83-.72c-.14,4.01-.84,7.87-2.03,11.5l19.81,6.48c1.79-5.47,2.84-11.26,3.05-17.25Z" />
                                             <path data-name="9"  d="M121.19,40.84l-19.56,7.22c1.48,4.01,2.36,8.31,2.53,12.79l20.83-.81c-.26-6.73-1.58-13.18-3.8-19.2Z" />
@@ -1003,26 +1025,28 @@ let PIAS = {
                                         </svg></div>
                                         <span>Télécharger la fiche</span>
                                     </button>
-                                    <a href="#" target="_blank" title="Partager sur LinkedIn" class="anap-btn size-xl style-pastille style-noir">
-                                        <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
-                                            <path d="M11.72,29.43h-4.8v-15.25h4.8v15.25ZM9.32,12.07c-.54,0-1.08-.17-1.53-.47-.45-.3-.8-.74-1.01-1.24-.21-.5-.26-1.06-.15-1.59.11-.53.37-1.02.76-1.41.39-.38.88-.64,1.41-.75s1.09-.05,1.59.16c.5.21.93.56,1.23,1.02.3.45.46.99.46,1.53,0,.36-.06.73-.2,1.06-.14.34-.34.64-.6.9-.26.26-.57.46-.91.6-.34.14-.7.2-1.07.19ZM29.42,29.45h-4.8v-8.33c0-2.46-1.04-3.22-2.39-3.22-1.42,0-2.82,1.07-2.82,3.28v8.27h-4.8v-15.25h4.62v2.11h.06c.46-.94,2.09-2.54,4.56-2.54,2.68,0,5.57,1.59,5.57,6.25v9.43Z" />
-                                        </svg></div>
-                                    </a>
-                                    <a href="#" target="_blank" title="Partager sur Instagram" class="anap-btn size-xl style-pastille style-noir">
-                                        <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
-                                              <path d="M18.52,6.51c3.75,0,4.19.02,5.66.08,1.37.06,2.11.29,2.6.48.65.25,1.12.56,1.61,1.05.49.49.79.96,1.05,1.61.19.49.42,1.24.48,2.6.07,1.48.08,1.92.08,5.66s-.02,4.19-.08,5.66c-.06,1.37-.29,2.11-.48,2.6-.25.65-.56,1.12-1.05,1.61-.49.49-.96.79-1.61,1.05-.49.19-1.24.42-2.6.48-1.48.07-1.92.08-5.66.08s-4.19-.02-5.66-.08c-1.37-.06-2.11-.29-2.6-.48-.65-.25-1.12-.56-1.61-1.05-.49-.49-.79-.96-1.05-1.61-.19-.49-.42-1.24-.48-2.6-.07-1.48-.08-1.92-.08-5.66s.02-4.19.08-5.66c.06-1.37.29-2.11.48-2.6.25-.65.56-1.12,1.05-1.61.49-.49.96-.79,1.61-1.05.49-.19,1.24-.42,2.6-.48,1.47-.07,1.92-.08,5.66-.08ZM18.52,3.98c-3.81,0-4.28.02-5.78.08-1.49.07-2.51.31-3.4.65-.93.36-1.71.84-2.49,1.62-.78.78-1.26,1.56-1.62,2.48-.34.89-.59,1.91-.65,3.4-.07,1.5-.08,1.98-.08,5.78s.02,4.28.08,5.78c.07,1.49.31,2.51.65,3.4.36.93.84,1.71,1.62,2.49.78.78,1.56,1.26,2.48,1.62.89.34,1.91.59,3.4.65,1.49.07,1.97.08,5.78.08s4.28-.02,5.78-.08c1.49-.07,2.51-.31,3.4-.65.92-.36,1.7-.84,2.48-1.62.78-.78,1.26-1.56,1.62-2.48.34-.89.59-1.91.65-3.4.07-1.5.08-1.97.08-5.78s-.02-4.28-.08-5.78c-.07-1.49-.31-2.51-.65-3.4-.35-.93-.82-1.71-1.6-2.49-.78-.78-1.56-1.26-2.48-1.62-.89-.34-1.91-.59-3.4-.65-1.5-.07-1.98-.09-5.78-.09ZM18.52,10.8c-3.98,0-7.2,3.23-7.2,7.2s3.23,7.2,7.2,7.2,7.2-3.23,7.2-7.2-3.23-7.2-7.2-7.2ZM18.52,22.67c-2.58,0-4.67-2.09-4.67-4.67s2.09-4.67,4.67-4.67,4.67,2.09,4.67,4.67-2.09,4.67-4.67,4.67ZM27.69,10.52c0,.93-.76,1.68-1.68,1.68s-1.68-.76-1.68-1.68.76-1.68,1.68-1.68,1.68.76,1.68,1.68Z" />
-                                        </svg></div>
-                                    </a>
-                                    <a href="#" target="_blank" title="Partager sur X (Twitter)" class="anap-btn size-xl style-pastille style-noir">
-                                        <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
-                                            <path d="M24.86,7.21h3.66l-8,9.14,9.41,12.44h-7.37l-5.77-7.54-6.6,7.54h-3.66l8.55-9.78L6.07,7.21h7.55l5.21,6.89,6.03-6.89ZM23.58,26.6h2.03L12.52,9.29h-2.18l13.24,17.31Z" />
-                                        </svg></div>
-                                    </a>
-                                    <a href="#" target="_blank" title="Partager sur Facebook" class="anap-btn size-xl style-pastille style-noir">
-                                        <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
-                                            <path d="M25.01,21.2l1.03-5.59h-5.97v-1.98c0-2.95,1.16-4.09,4.16-4.09.93,0,1.68.02,2.11.07v-5.06c-.82-.23-2.82-.45-3.97-.45-6.11,0-8.92,2.88-8.92,9.11v2.41h-3.77v5.59h3.77v12.16c1.41.35,2.89.54,4.42.54.75,0,1.49-.05,2.21-.13v-12.56h4.95Z" />
-                                        </svg></div>
-                                    </a>
+                                    <div class="social-buttons">
+                                        <a href="#" target="_blank" title="Partager sur LinkedIn" class="anap-btn size-xl style-pastille style-noir">
+                                            <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
+                                                <path d="M11.72,29.43h-4.8v-15.25h4.8v15.25ZM9.32,12.07c-.54,0-1.08-.17-1.53-.47-.45-.3-.8-.74-1.01-1.24-.21-.5-.26-1.06-.15-1.59.11-.53.37-1.02.76-1.41.39-.38.88-.64,1.41-.75s1.09-.05,1.59.16c.5.21.93.56,1.23,1.02.3.45.46.99.46,1.53,0,.36-.06.73-.2,1.06-.14.34-.34.64-.6.9-.26.26-.57.46-.91.6-.34.14-.7.2-1.07.19ZM29.42,29.45h-4.8v-8.33c0-2.46-1.04-3.22-2.39-3.22-1.42,0-2.82,1.07-2.82,3.28v8.27h-4.8v-15.25h4.62v2.11h.06c.46-.94,2.09-2.54,4.56-2.54,2.68,0,5.57,1.59,5.57,6.25v9.43Z" />
+                                            </svg></div>
+                                        </a>
+                                        <a href="#" target="_blank" title="Partager sur Instagram" class="anap-btn size-xl style-pastille style-noir">
+                                            <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
+                                                <path d="M18.52,6.51c3.75,0,4.19.02,5.66.08,1.37.06,2.11.29,2.6.48.65.25,1.12.56,1.61,1.05.49.49.79.96,1.05,1.61.19.49.42,1.24.48,2.6.07,1.48.08,1.92.08,5.66s-.02,4.19-.08,5.66c-.06,1.37-.29,2.11-.48,2.6-.25.65-.56,1.12-1.05,1.61-.49.49-.96.79-1.61,1.05-.49.19-1.24.42-2.6.48-1.48.07-1.92.08-5.66.08s-4.19-.02-5.66-.08c-1.37-.06-2.11-.29-2.6-.48-.65-.25-1.12-.56-1.61-1.05-.49-.49-.79-.96-1.05-1.61-.19-.49-.42-1.24-.48-2.6-.07-1.48-.08-1.92-.08-5.66s.02-4.19.08-5.66c.06-1.37.29-2.11.48-2.6.25-.65.56-1.12,1.05-1.61.49-.49.96-.79,1.61-1.05.49-.19,1.24-.42,2.6-.48,1.47-.07,1.92-.08,5.66-.08ZM18.52,3.98c-3.81,0-4.28.02-5.78.08-1.49.07-2.51.31-3.4.65-.93.36-1.71.84-2.49,1.62-.78.78-1.26,1.56-1.62,2.48-.34.89-.59,1.91-.65,3.4-.07,1.5-.08,1.98-.08,5.78s.02,4.28.08,5.78c.07,1.49.31,2.51.65,3.4.36.93.84,1.71,1.62,2.49.78.78,1.56,1.26,2.48,1.62.89.34,1.91.59,3.4.65,1.49.07,1.97.08,5.78.08s4.28-.02,5.78-.08c1.49-.07,2.51-.31,3.4-.65.92-.36,1.7-.84,2.48-1.62.78-.78,1.26-1.56,1.62-2.48.34-.89.59-1.91.65-3.4.07-1.5.08-1.97.08-5.78s-.02-4.28-.08-5.78c-.07-1.49-.31-2.51-.65-3.4-.35-.93-.82-1.71-1.6-2.49-.78-.78-1.56-1.26-2.48-1.62-.89-.34-1.91-.59-3.4-.65-1.5-.07-1.98-.09-5.78-.09ZM18.52,10.8c-3.98,0-7.2,3.23-7.2,7.2s3.23,7.2,7.2,7.2,7.2-3.23,7.2-7.2-3.23-7.2-7.2-7.2ZM18.52,22.67c-2.58,0-4.67-2.09-4.67-4.67s2.09-4.67,4.67-4.67,4.67,2.09,4.67,4.67-2.09,4.67-4.67,4.67ZM27.69,10.52c0,.93-.76,1.68-1.68,1.68s-1.68-.76-1.68-1.68.76-1.68,1.68-1.68,1.68.76,1.68,1.68Z" />
+                                            </svg></div>
+                                        </a>
+                                        <a href="#" target="_blank" title="Partager sur X (Twitter)" class="anap-btn size-xl style-pastille style-noir">
+                                            <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
+                                                <path d="M24.86,7.21h3.66l-8,9.14,9.41,12.44h-7.37l-5.77-7.54-6.6,7.54h-3.66l8.55-9.78L6.07,7.21h7.55l5.21,6.89,6.03-6.89ZM23.58,26.6h2.03L12.52,9.29h-2.18l13.24,17.31Z" />
+                                            </svg></div>
+                                        </a>
+                                        <a href="#" target="_blank" title="Partager sur Facebook" class="anap-btn size-xl style-pastille style-noir">
+                                            <div class="icon-container"><svg viewBox="0 0 36 36" fill="none">
+                                                <path d="M25.01,21.2l1.03-5.59h-5.97v-1.98c0-2.95,1.16-4.09,4.16-4.09.93,0,1.68.02,2.11.07v-5.06c-.82-.23-2.82-.45-3.97-.45-6.11,0-8.92,2.88-8.92,9.11v2.41h-3.77v5.59h3.77v12.16c1.41.35,2.89.54,4.42.54.75,0,1.49-.05,2.21-.13v-12.56h4.95Z" />
+                                            </svg></div>
+                                        </a>
+                                    </div>
 
                                 </wrapper>
                             </wrapper>

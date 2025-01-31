@@ -36,6 +36,7 @@
   --anap-tr-push: 50ms ease-out;
   --anap-tr-smooth: 0.35s cubic-bezier(0.4, 0, 0, 1);
   --anap-interaction-push-scale: 0.96;
+  --anap-interaction-push-scale--large: 0.975;
   --anap-interaction-hover-scale: 1.1;
   /* colors */
   --anap-rgb-rouge-anap: 214, 13, 72;
@@ -103,7 +104,7 @@ html[data-anap-theme=dark] {
     --anap-ts-titre-3: 34px;
     --anap-ts-titre-4: 28px;
     --anap-ts-soustitre-M: 26px;
-    --anap-ts-soustitre-S: 20px;
+    --anap-ts-soustitre-S: 18.5px;
     --anap-ts-soustitre-XS: 17px;
     --anap-ts-corps-L: 15px;
     --anap-ts-corps-M: 13px;
@@ -120,7 +121,7 @@ body {
   font-family: "Raleway", sans-serif;
   font-weight: 400;
   font-weight: var(--anap-fweight-regular);
-  line-height: 1.2;
+  line-height: 1.3;
   color: rgb(34, 34, 34);
   color: var(--anap-c-texte);
   background-color: rgb(255, 255, 255);
@@ -256,6 +257,13 @@ p a, span a {
   width: var(--anap-border-width);
   height: 100%;
 }
+@media (max-width: 600px) {
+  .anap-separator.sideways:not(.keep-sideways-mobile) {
+    height: 2px;
+    height: var(--anap-border-width);
+    width: 100%;
+  }
+}
 .anap-separator.style-accent {
   background-color: rgb(214, 13, 72);
   background-color: var(--anap-c-accent);
@@ -389,6 +397,7 @@ p a, span a {
   justify-content: center;
   flex-shrink: 0;
   order: 99;
+  pointer-events: none;
 }
 .anap-btn .icon-container > * {
   position: absolute;
@@ -452,13 +461,13 @@ p a, span a {
   transition: fill 150ms ease-out, stroke 150ms ease-out, opacity 150ms ease-out, transform 0.35s cubic-bezier(0.4, 0, 0, 1);
   transition: fill var(--anap-tr-fade), stroke var(--anap-tr-fade), opacity var(--anap-tr-fade), transform var(--anap-tr-smooth);
 }
-.anap-btn:hover, .anap-btn:active {
+html:not(.deviceIsTouch) .anap-btn:hover, .anap-btn:active {
   background-color: var(--a-btn-c-bg--hover);
   border-color: var(--a-btn-c-border--hover);
   color: var(--a-btn-c-inner--hover);
   --a-btn-icon-color: var(--a-btn-c-inner--hover);
 }
-.anap-btn:hover.style-retour .icon-container > *, .anap-btn:active.style-retour .icon-container > * {
+html:not(.deviceIsTouch) .anap-btn:hover.style-retour .icon-container > *, .anap-btn:active.style-retour .icon-container > * {
   transform: translateX(-0.25em);
 }
 .anap-btn:active {
@@ -502,9 +511,29 @@ p a, span a {
   --a-btn-c-border--hover: var(--anap-c-rouge-anap--hover);
   --a-btn-c-inner--hover: var(--anap-c-rouge-anap--hover);
 }
+.anap-btn.toggle.active .icon-container .toggle-active--rotate,
+.anap-btn.toggle.active .icon-container .toggle-active--rotate-reverse {
+  transform: rotateZ(0deg);
+}
+.anap-btn.toggle.active .icon-container .toggle-active--rotate-invert {
+  transform: rotateZ(135deg);
+}
+.anap-btn.toggle.active .icon-container .toggle-active--rotate-invert-reverse {
+  transform: rotateZ(-135deg);
+}
 .anap-btn.toggle:not(.active) .icon-container .toggle-active, .anap-btn.toggle.active .icon-container .toggle-active + *:not(.toggle-active) {
   opacity: 0;
   transform: scale(0.75);
+}
+.anap-btn.toggle .icon-container .toggle-active--rotate-invert,
+.anap-btn.toggle .icon-container .toggle-active--rotate-invert-reverse {
+  transform: rotateZ(0deg);
+}
+.anap-btn.toggle .icon-container .toggle-active--rotate {
+  transform: rotateZ(-135deg);
+}
+.anap-btn.toggle .icon-container .toggle-active--rotate-reverse {
+  transform: rotateZ(135deg);
 }
 .anap-btn.toggle.style-secondaire.active {
   --a-btn-c-bg: var(--anap-c-rouge-anap--hover);
@@ -589,15 +618,11 @@ p a, span a {
      -moz-user-select: none;
           user-select: none;
   pointer-events: all;
+  position: relative;
   --anap-indicator-size: var(--anap-marge-XL);
   --anap-indicator-padding: var(--anap-marge-XS);
   --anap-switch-padding: var(--anap-marge-XS);
   --anap-switch-offset: var(--anap-marge-XS);
-  position: fixed;
-  bottom: 40px;
-  bottom: var(--anap-marge-XXL);
-  right: 40px;
-  right: var(--anap-marge-XXL);
 }
 .anap-theme-switcher > wrapper {
   position: relative;
@@ -631,7 +656,7 @@ p a, span a {
   height: calc(100% - var(--anap-indicator-padding) * 2);
   display: block;
   opacity: 0;
-  transition: transform 0.6s cubic-bezier(0.3, 0.1, 0, 1);
+  transition: transform 0.7s cubic-bezier(0, 0, 0, 1);
 }
 .anap-theme-switcher .anap-theme-indicator svg.anap-icon--light {
   fill: rgb(129, 119, 119);
@@ -670,7 +695,7 @@ html[data-anap-theme=dark] .anap-theme-switcher .anap-theme-indicator {
   transition: transform 0.35s cubic-bezier(0.4, 0, 0, 1);
   transition: transform var(--anap-tr-smooth);
 }
-.anap-theme-switcher > wrapper:hover .anap-theme-indicator > wrapper {
+html:not(.deviceIsTouch) .anap-theme-switcher > wrapper:hover .anap-theme-indicator > wrapper {
   transform: rotateX(0.01deg) scale(1.1) !important;
 }
 .anap-theme-switcher > wrapper:active {

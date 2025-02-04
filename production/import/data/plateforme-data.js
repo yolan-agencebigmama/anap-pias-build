@@ -4,7 +4,13 @@ const HC_ITEMS = [
         itemHex : {
             position : [-5, 0],
             titre : "Finances",
-            img : "assets/hex/items-piste2/item-hex-finances.png",
+            img : "assets/hex/items/item-hex-finances.png",
+        },
+        itemMenu : {
+            imgBg : "assets/hex/items/item-hex-finances-bg.png",
+            imgParallax : "assets/hex/items/item-hex-finances-s.png",
+            parallaxAnchor : "center",
+            scale : 1.6,
         },
         menu : {
             description : `Lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet.<br>Lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet.`,
@@ -22,7 +28,13 @@ const HC_ITEMS = [
         itemHex : {
             position : [-3, -2],
             titre : "Sécurité Informatique",
-            img : "assets/hex/items-piste2/item-hex-securite-informatique.png",
+            img : "assets/hex/items/item-hex-securite_info.png",
+        },
+        itemMenu : {
+            imgBg : "assets/hex/items/item-hex-securite_info-bg.png",
+            imgParallax : "assets/hex/items/item-hex-securite_info-s.png",
+            parallaxAnchor : "center",
+            scale : 1.4,
         },
         menu : {
             description : "",
@@ -40,13 +52,13 @@ const HC_ITEMS = [
         itemHex : {
             position : [0, -4],
             titre : "Diagnostic",
-            img : "assets/hex/items-piste2/item-hex-diagnostic.png",
+            img : "assets/hex/items/item-hex-diagnostic.png",
         },
         itemMenu : {
-            imgBg : "assets/hex/items-piste2/item-hex-diagnostic-bg.png",
-            imgParallax : "assets/hex/items-piste2/item-hex-diagnostic-s.png",
+            imgBg : "assets/hex/items/item-hex-diagnostic-bg.png",
+            imgParallax : "assets/hex/items/item-hex-diagnostic-s.png",
             parallaxAnchor : "right bottom",
-            scale : 1.4,
+            scale : 1.325,
         },
         menu : {
             links : [
@@ -63,13 +75,13 @@ const HC_ITEMS = [
         itemHex : {
             position : [-3, 2],
             titre : "Chirurgie",
-            img : "assets/hex/items-piste2/item-hex-chirurgie.png",
+            img : "assets/hex/items/item-hex-chirurgie.png",
         },
         itemMenu : {
-            imgBg : "assets/hex/items-piste2/item-hex-chirurgie-bg.png",
-            imgParallax : "assets/hex/items-piste2/item-hex-chirurgie-s.png",
+            imgBg : "assets/hex/items/item-hex-chirurgie-bg.png",
+            imgParallax : "assets/hex/items/item-hex-chirurgie-s.png",
             parallaxAnchor : "bottom center",
-            scale : 1.535,
+            scale : 1.3,
         },
         menu : {
             description : `Lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet lorem ipsum dolor sit amet lorem ipsum dolor sit amet.`,
@@ -87,13 +99,13 @@ const HC_ITEMS = [
         itemHex : {
             position : [2, 1],
             titre : "Ressources Humaines",
-            img : "assets/hex/items-piste2/item-hex-ressources-humaines.png",
+            img : "assets/hex/items/item-hex-rh.png",
         },
         itemMenu : {
-            imgBg : "assets/hex/items-piste2/item-hex-ressources-humaines-bg.png",
-            imgParallax : "assets/hex/items-piste2/item-hex-ressources-humaines-s.png",
+            imgBg : "assets/hex/items/item-hex-rh-bg.png",
+            imgParallax : "assets/hex/items/item-hex-rh-s.png",
             parallaxAnchor : "bottom right",
-            scale : 2.35,
+            scale : 1.7,
         },
         menu : {
             links : [
@@ -110,13 +122,13 @@ const HC_ITEMS = [
         itemHex : {
             position : [3, -3],
             titre : "Impact Performance",
-            img : "assets/hex/items-piste2/item-hex-impact-performance.png",
+            img : "assets/hex/items/item-hex-impact_perf.png",
         },
         itemMenu : {
-            imgBg : "assets/hex/items-piste2/item-hex-impact-performance-bg.png",
-            imgParallax : "assets/hex/items-piste2/item-hex-impact-performance-s.png",
-            parallaxAnchor : "bottom center",
-            scale : 1.3,
+            imgBg : "assets/hex/items/item-hex-impact_perf-bg.png",
+            imgParallax : "assets/hex/items/item-hex-impact_perf-s.png",
+            parallaxAnchor : "bottom left",
+            scale : 1.35,
         },
         menu : {
             links : [
@@ -133,13 +145,13 @@ const HC_ITEMS = [
         itemHex : {
             position : [5, 0],
             titre : "Parcours Patient",
-            img : "assets/hex/items-piste2/item-hex-parcours-patient.png",
+            img : "assets/hex/items/item-hex-parcours_patient.png",
         },
         itemMenu : {
-            imgBg : "assets/hex/items-piste2/item-hex-parcours-patient-bg.png",
-            imgParallax : "assets/hex/items-piste2/item-hex-parcours-patient-s.png",
+            imgBg : "assets/hex/items/item-hex-parcours_patient-bg.png",
+            imgParallax : "assets/hex/items/item-hex-parcours_patient-s.png",
             parallaxAnchor : "bottom center",
-            scale : 1.35,
+            scale : 1.4,
         },
         menu : {
             links : [

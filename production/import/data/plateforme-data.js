@@ -246,6 +246,7 @@ const FICHES = {
             {
                 titre: "Nature de la solution et modalité d'évaluation",
                 details: [
+                    "", // test vide qui sera retiré automatiquement
                     "IA de reconnaissance du langage spécialisé dans la compréhension des abréviations, de la Dci, formes…,",
                     "DM de niveau 1"
                 ]
@@ -255,7 +256,24 @@ const FICHES = {
                 details: [
                     "Retranscription intelligente des ordonnances en informations structurées à partir d’une photographie ( Services d’urgences, Anesthésistes, …),",
                     "Identification des risques iatrogènes lié au terrain et antécédents patients,",
-                    "Propositions d’alternatives thérapeutiques compatibles avec le terrain patient et disponible au livret thérapeutique."
+                    "Propositions d’alternatives thérapeutiques compatibles avec le terrain patient et disponible au livret thérapeutique.",
+                    // tests de niveaux
+                    [
+                        "Deuxième niveau",
+                        "test",
+                        [
+                            "Troisième niveau",
+                        ],
+                        "test #2 (vide)",
+                        [],
+                        "test #3",
+                        [
+                            "Troisième niveau #3",
+                        ],
+                    ],
+                    "Retranscription intelligente des ordonnances en informations structurées à partir d’une photographie ( Services d’urgences, Anesthésistes, …),",
+                    "Identification des risques iatrogènes lié au terrain et antécédents patients,",
+                    "Propositions d’alternatives thérapeutiques compatibles avec le terrain patient et disponible au livret thérapeutique.",
                 ]
             },
             {

@@ -177,7 +177,7 @@ let ANAP = {
   },
   search: {
     linked: {
-      init: () => {
+      init: (keyEnterSend = true) => {
         if (ANAP.elements.searchInputsLinked.length != 0 && ANAP.elements.searchButtonsLinked.length != 0) {
           if (ANAP.elements.searchInputsLinked.length > 0 && ANAP.elements.searchButtonsLinked.length > 0) {
             ANAP.elements.searchInputsLinked.forEach((searchInput) => {
@@ -191,9 +191,22 @@ let ANAP = {
                     ANAP.search.linked.triggerSearch(
                       searchInput.value,
                       PIAS.APP.results.search.generate,
-                      PIAS.APP.results.search.setup
+                      PIAS.APP.results.search.setup,
+                      PIAS.APP.results.search.condition
                     );
                   });
+                  if (keyEnterSend) {
+                    searchInput.addEventListener("keydown", (e) => {
+                      if (e.key === "Enter") {
+                        ANAP.search.linked.triggerSearch(
+                          searchInput.value,
+                          PIAS.APP.results.search.generate,
+                          PIAS.APP.results.search.setup,
+                          PIAS.APP.results.search.condition
+                        );
+                      }
+                    });
+                  }
                 }
               });
               if (!areCorresponding) {
@@ -205,7 +218,14 @@ let ANAP = {
           }
         }
       },
-      triggerSearch: (inputSearch, callbackGenerate, callbackSetup) => {
+      triggerSearch: (inputSearch, callbackGenerate, callbackSetup, condition = true) => {
+        if (condition === true || condition === false) {
+          if (!condition) {
+            return;
+          }
+        } else if (!condition()) {
+          return;
+        }
         if (callbackSetup) {
           callbackSetup();
         }
@@ -285,6 +305,7 @@ let PIAS = {
     topBarSecondaryTitle: document.querySelector(".plateforme-top .top-secondary wrapper[data-pias-id='title-secondary']"),
     topBarSecondaryTitleText: document.querySelector(".plateforme-top .top-secondary wrapper[data-pias-id='title-secondary'] .titre-secondaire"),
     topBarSecondarySearchBar: document.querySelector(".plateforme-top .top-secondary wrapper[data-pias-id='search-bar']"),
+    topBarSecondarySearchBarInput: document.querySelector(".plateforme-top .top-secondary wrapper[data-pias-id='search-bar'] input"),
     topBarSearchBtn: document.querySelector(".plateforme-top button[data-pias-id='search-toggle']"),
     proposerProjetContainer: document.querySelector(".plateforme-proposer-projet"),
     proposerProjetSidebarWrapper: document.querySelector(".plateforme-proposer-projet .widget-container"),
@@ -331,12 +352,21 @@ let PIAS = {
       window.addEventListener("resize", windowResizeEvents);
       docHTML.setAttribute("data-pias-intro-state", "init");
       PIAS.APP.intro.transition();
+      docHTML.setAttribute("data-pias-item-opened", "false");
       PIAS.honeycomb.itemCount = 0;
       PIAS.APP.honeycomb.placeItem();
       PIAS.elements.menuBackground.addEventListener("click", PIAS.APP.honeycomb.itemActions.close);
       PIAS.elements.fichesBtnRetour.addEventListener("click", PIAS.APP.fiches.back);
       PIAS.elements.topBarSearchBtn.addEventListener("click", PIAS.APP.topBar.searchOpenToggle);
       PIAS.elements.topBarSearchBtn.addEventListener("click", PIAS.APP.results.search.close);
+      document.querySelector(".plateforme-top nav .logo-anap-nav").addEventListener("click", () => {
+        if (docHTML.getAttribute("data-pias-search-opened") === "false" && docHTML.getAttribute("data-pias-fiches-results") === "false" && docHTML.getAttribute("data-pias-fiche-opened") === "false" && docHTML.getAttribute("data-pias-item-opened") === "false") {
+          window.location.href = "https://anap.fr/";
+          return;
+        }
+        PIAS.APP.fiches.back(false, true);
+        PIAS.APP.honeycomb.itemActions.close();
+      });
       PIAS.APP.fiches.init();
       PIAS.APP.url.init();
       if (PIAS.honeycomb.blobs.active == true) {
@@ -612,7 +642,7 @@ let PIAS = {
           itemMenuContainerElement.innerHTML = `
                         <wrapper>
                             <div class="color-bg fca" style="${itemData.couleurCSS_menuBg ? "--menu-bg-color: " + itemData.couleurCSS_menuBg : ""}">
-                                <div class="close-btn"><div class="mobile-bg-target"></div><div class="bg fca0"></div><wrapper class="icon"><svg viewBox="0 0 24 24"><line x2="24" y2="24" /><line y1="24" x2="24" /></wrapper></div>
+                                <div class="close-btn"><div class="mobile-bg-target"></div><div class="bg fca0"></div><wrapper class="icon"><svg viewBox="0 0 24 24"><line x2="24" y2="24" /><line y1="24" x2="24" /></svg></wrapper></div>
                                 <div class="color fca0"></div>
                             </div>
                             <div class="sidebar">
@@ -904,13 +934,28 @@ let PIAS = {
         }
         let htmlTimeline = "";
         if (exists.timeline) {
+          let timelineDetails_generateChildren = function(text, _inRecursion = false) {
+            htmlLists += `<li style="--anim-delay-factor: ${listCount};"><p>${text}</p></li>`;
+            listCount += _inRecursion ? 0.5 : 1;
+          }, timelineDetails_generateRecursive = function(dataArray, inRecursion = false) {
+            dataArray.forEach((d) => {
+              if (Array.isArray(d) && d.length > 0) {
+                htmlLists += '<li class="indent"><ul>';
+                timelineDetails_generateRecursive(d, true);
+                htmlLists += "</ul></li>";
+              } else {
+                if (d.length < 1) {
+                  return;
+                }
+                timelineDetails_generateChildren(d, inRecursion);
+              }
+            });
+          };
+          let htmlLists = "", listCount = 0;
           ficheData.timeline.forEach((data) => {
-            let htmlLists = "", listCount = 0;
+            htmlLists = "", listCount = 0;
             if (data.details && data.details.length > 0) {
-              data.details.forEach((d) => {
-                htmlLists += `<li style="--anim-delay-factor: ${listCount};"><p>${d}</p></li>`;
-                listCount += 1;
-              });
+              timelineDetails_generateRecursive(data.details);
             }
             htmlTimeline += `
                             <wrapper class="timeline-step">
@@ -1289,6 +1334,9 @@ let PIAS = {
           if (docHTML.getAttribute("data-pias-search-opened") !== "false") {
             PIAS.APP.fiches.back(void 0, true);
           }
+        },
+        condition: () => {
+          return !docHTML.getAttribute("data-pias-fiches-results").includes("-generated");
         }
       }
     },
@@ -1332,8 +1380,12 @@ let PIAS = {
         PIAS.elements.topBarSearchBtn.classList.toggle("active");
         if (PIAS.elements.topBarSearchBtn.classList.contains("active")) {
           PIAS.APP.topBar.secondaryOpen("search");
+          setTimeout(() => {
+            PIAS.elements.topBarSecondarySearchBarInput.focus({ preventScroll: true });
+          }, 100);
         } else {
           PIAS.APP.topBar.secondaryOpen(false);
+          PIAS.elements.topBarSecondarySearchBarInput.blur();
         }
       }
     }

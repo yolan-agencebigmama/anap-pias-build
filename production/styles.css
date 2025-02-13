@@ -551,6 +551,10 @@ body {
   z-index: 94;
 }
 
+.plateforme-footer {
+  z-index: 91;
+}
+
 /* - UTILITIES - */
 .plateforme-main-container .us,
 .plateforme-main-container .usc,
@@ -958,6 +962,7 @@ html.pias-blob-follow-hide .honeycomb-container .blobs > div.follow {
   height: calc(100% + (1vh * 20)) !important;
   height: calc(100% + calc(1vh * 20)) !important;
   height: calc(100% + var(--honeycomb-overflow)) !important;
+  min-height: 100%;
   -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 10%,rgb(0, 0, 0) 90%, rgba(0, 0, 0, 0) 100%), linear-gradient(to left, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 7%,rgb(0, 0, 0) 93%, rgba(0, 0, 0, 0) 100%);
           mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 10%,rgb(0, 0, 0) 90%, rgba(0, 0, 0, 0) 100%), linear-gradient(to left, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 7%,rgb(0, 0, 0) 93%, rgba(0, 0, 0, 0) 100%);
   -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 10% 90%, rgba(0, 0, 0, 0) 100%), linear-gradient(to left, rgba(0, 0, 0, 0) 0%, rgb(0, 0, 0) 7% 93%, rgba(0, 0, 0, 0) 100%);
@@ -1283,6 +1288,102 @@ html:not([data-pias-fiches-results=false]) .plateforme-honeycomb .hc-item * {
     gap: var(--anap-marge-L);
     grid-row-gap: 0px;
     row-gap: 0px;
+  }
+}
+/*- PLATEFORME FOOTER -*/
+.plateforme-footer {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  height: auto;
+  width: auto;
+  width: -moz-max-content;
+  width: max-content;
+  max-width: 100%;
+}
+.plateforme-footer > wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--anap-marge-ML);
+  row-gap: var(--anap-marge-XS);
+  padding: 0.5em var(--anap-marge-XL) 0.8em;
+  flex-wrap: wrap;
+  background-color: rgba(var(--pias-rgb-bg), 0.65);
+  -webkit-backdrop-filter: blur(12px);
+          backdrop-filter: blur(12px);
+  border-top-left-radius: var(--anap-marge-L);
+  border-top-right-radius: var(--anap-marge-L);
+}
+.plateforme-footer > wrapper > * {
+  font-size: var(--anap-ts-corps-M);
+}
+.plateforme-footer > wrapper a:not(.icon-link) {
+  display: block;
+  flex-shrink: 0;
+  font-weight: 500;
+  color: var(--anap-c-texte-2);
+  -webkit-text-decoration: underline;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.45em;
+  padding: 0.2em 0.6em;
+  border-radius: 99em;
+  /*background-color: rgba(var(--pias-rgb-bg), 0.8);
+  box-shadow: 0px 0px 12px 6px rgba(var(--pias-rgb-bg), 0.8);*/
+  overflow: visible;
+  transition: color var(--anap-tr-fade), text-underline-offset var(--anap-tr-push), -webkit-text-decoration var(--anap-tr-fade);
+  transition: color var(--anap-tr-fade), text-decoration var(--anap-tr-fade), text-underline-offset var(--anap-tr-push);
+  transition: color var(--anap-tr-fade), text-decoration var(--anap-tr-fade), text-underline-offset var(--anap-tr-push), -webkit-text-decoration var(--anap-tr-fade);
+}
+.plateforme-footer > wrapper a:not(.icon-link):hover {
+  color: var(--anap-c-accent);
+}
+.plateforme-footer > wrapper a:not(.icon-link):active {
+  text-decoration-color: var(--anap-c-accent);
+  text-underline-offset: 0.3em;
+}
+.plateforme-footer > wrapper .icon-link {
+  box-sizing: content-box;
+  padding: 0em 0.25em 0.2em;
+  width: 1.4em;
+  height: 1.4em;
+}
+.plateforme-footer > wrapper .icon-link svg {
+  fill: var(--anap-c-texte-2);
+  transition: fill var(--anap-tr-fade);
+}
+.plateforme-footer > wrapper .icon-link:hover svg {
+  fill: var(--anap-c-accent);
+}
+.plateforme-footer > wrapper {
+  transform: translateY(100%);
+  transition: transform 0.8s 0.2s cubic-bezier(0.6, 0, 0, 0.8);
+}
+html:not([data-pias-intro-state=transition-finished]) .plateforme-footer {
+  opacity: 0;
+}
+@media (min-width: 900px) {
+  html[data-pias-intro-state=transition-finished][data-pias-search-opened=false][data-pias-fiches-results=false][data-pias-fiche-opened=false] .plateforme-footer > wrapper {
+    transform: translateY(0);
+  }
+}
+@media (max-width: 900px) {
+  html[data-pias-intro-state=transition-finished][data-pias-search-opened=false][data-pias-fiches-results=false][data-pias-fiche-opened=false][data-pias-item-opened=false] .plateforme-footer > wrapper {
+    transform: translateY(0);
+  }
+}
+html:not(.deviceIsTouch) .plateforme-footer:focus-within > wrapper, html:not(.deviceIsTouch) .plateforme-footer:hover > wrapper {
+  transform: translateY(0);
+  transition: transform var(--anap-tr-smooth);
+  transition-duration: 0.5s;
+}
+
+@media (max-width: 900px) {
+  .plateforme-footer {
+    padding: 0 var(--anap-marge-M);
   }
 }
 /*- PLATEFORME ITEM MENU -*/
@@ -1785,7 +1886,7 @@ html.deviceIsTouch .plateforme-menu .item-menu.active.actions-delay .hc-item[dat
   position: relative;
 }
 
-.plateforme-top .logo-anap-nav a {
+.plateforme-top .logo-anap-nav > * {
   display: block;
   position: relative;
   width: auto;
@@ -1999,7 +2100,7 @@ html[data-pias-intro-state=transition] .plateforme-top .title-zone > wrapper {
     padding: var(--anap-marge-ML) var(--anap-marge-L);
     padding-bottom: 0;
   }
-  .plateforme-top .logo-anap-nav a {
+  .plateforme-top .logo-anap-nav > * {
     height: max(1.85rem, min(4vw, 3rem));
   }
   .plateforme-top .nav-shape {
@@ -2879,11 +2980,21 @@ html[data-pias-fiche-opened=building] .plateforme-fiche-small, html[data-pias-fi
 }
 .plateforme-fiche-content ul li > * {
   display: block;
+  min-height: 1em;
 }
 .plateforme-fiche-content ul li + li {
   margin-top: var(--anap-marge-L);
 }
-.plateforme-fiche-content ul li::before {
+.plateforme-fiche-content ul li + li.indent {
+  margin-top: var(--anap-marge-M);
+}
+.plateforme-fiche-content ul li + li.indent:not(:last-child) {
+  margin-bottom: var(--anap-marge-L);
+}
+.plateforme-fiche-content ul li.indent li {
+  margin-top: var(--anap-marge-M);
+}
+.plateforme-fiche-content ul li:not(.indent)::before {
   content: "▶";
   position: absolute;
   left: 0;
@@ -2892,6 +3003,10 @@ html[data-pias-fiche-opened=building] .plateforme-fiche-small, html[data-pias-fi
      -moz-user-select: none;
           user-select: none;
   pointer-events: none;
+}
+.plateforme-fiche-content ul li.indent li::before {
+  opacity: 0.8;
+  transform: scale(0.65);
 }
 .plateforme-fiche-content .fiche-tags {
   display: flex;
